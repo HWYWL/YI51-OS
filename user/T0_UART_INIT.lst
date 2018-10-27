@@ -1,0 +1,245 @@
+C51 COMPILER V9.54   T0_UART_INIT                                                          03/07/2017 17:45:06 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE T0_UART_INIT
+OBJECT MODULE PLACED IN ..\debug\T0_UART_INIT.obj
+COMPILER INVOKED BY: I:\Keil_v5\C51\BIN\C51.EXE ..\SCH51\T0_UART_INIT.C OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(..\SCH51;..
+                    -\task) DEBUG PRINT(.\T0_UART_INIT.lst) TABS(2) OBJECT(..\debug\T0_UART_INIT.obj)
+
+line level    source
+
+   1          /*--------------------------------------*-
+   2          ÎÄ¼þ£º  T0_uart_init.c
+   3          Ê±¼ä£º2016Äê3ÔÂ30ÈÕ
+   4          ×÷Õß£ºHWY
+   5          °æ±¾£ºV1.0
+   6          -*---------------------------------------*/
+   7          
+   8          #include "includes.h"
+   9          
+  10          #define OSC_FREQ_DIV  12   //¾§Õñ12·ÖÆµ(51µ¥Æ¬»ú¶¨Ê±Æ÷²¿·Ö¾§ÕñÎªÏµÍ³¾§Õñ12·ÖÆµ)
+  11          
+  12          INT32U  MS_Counter  =  0;  //32Î»ºÁÃë¼ÆÊýÆ÷£¬¿ÉÓÃÓÚÏµÍ³À©Õ¹
+  13          
+  14          
+  15          extern  sTask SCH_tasks[SCH_MAX_TASKS];
+  16          extern  INT8U Error_code;
+  17          
+  18          INT8U  _TH0_Init_Tick_Time = ( 65536 - (INT16U) ( OSC_FREQ * T0_TICK_TIME_MS / (OSC_FREQ_DIV * 1000) ) ) /
+             - 256;  //¶¨Ê±Ö¸¶¨ms 
+  19          INT8U  _TL0_Init_Tick_Time = ( 65536 - (INT16U) ( OSC_FREQ * T0_TICK_TIME_MS / (OSC_FREQ_DIV * 1000) ) ) %
+             - 256;  //¶¨Ê±Ö¸¶¨ms
+  20          
+  21          //========================================================================================================
+             -======================
+  22          #if USE_DELAY_MS==1         //Ê¹ÓÃÑÓÊ±º¯Êý(µ¥Î»£ºms)
+              void Delay_ms(INT32U N_ms)  //µ¥Î»£ºms
+              {
+                INT32U t_old, t_now, t_cnt = 0;
+              
+                t_old = MS_Counter;     //±£´æ¸Õ½øÈëÊ±MS_CounterµÄÊýÖµ
+              
+                while(1)
+                {
+                  t_now = MS_Counter; //ÊµÊ±±£´æµ±Ç°MS_CounterµÄÊýÖµ
+              
+                  if(t_now != t_old)
+                  {
+                    if(t_now > t_old)
+                      t_cnt += t_now - t_old;
+                    else
+                      t_cnt += 0xFFFFFFFF - (t_old - t_now);
+                  }
+              
+                  t_old = t_now;      //ÕâÒ»¾äºÜ¹Ø¼ü 
+              
+                  if(t_cnt >= N_ms)
+                    break;
+                }
+              }
+              #endif
+  48          
+  49          //========================================================================================================
+             -======================
+  50          static void SCH_Timer0_Reload(void)   //¶¨Ê±Æ÷ T0ÖØ×°ÔØ
+C51 COMPILER V9.54   T0_UART_INIT                                                          03/07/2017 17:45:06 PAGE 2   
+
+  51          {
+  52   1          TH0  = _TH0_Init_Tick_Time;   
+  53   1          TL0  = _TL0_Init_Tick_Time;   
+  54   1      }
+  55          
+  56          //========================================================================================================
+             -======================
+  57          void SCH_Init_T0_UART(void)         //T0ºÍUART³õÊ¼»¯³ÌÐò
+  58          {
+  59   1          INT8U Index;
+  60   1      
+  61   1          for(Index = 0; Index < SCH_MAX_TASKS; Index++) 
+  62   1          {
+  63   2             SCH_Clear_Task(Index);   //Çå¿ÕÈÎÎñ
+  64   2          }
+  65   1      
+  66   1          Error_code = 0;
+  67   1      
+  68   1        //== T0ºÍUART³õÊ¼»¯³ÌÐò =================================================================================
+             -===================
+  69   1        TMOD  = 0x21;    //T1:Gate C/T M1 M0 T0:Gate C/T M1 M0
+  70   1                         //    0    0  1  0      0    0  0  1£º T1·½Ê½2¶¨Ê±£¬8Î»³õÖµÖØ×°£¬T0:¶¨Ê±Æ÷,·½Ê½1(16Î»)
+  71   1        SCH_Timer0_Reload();   //¶¨Ê±Æ÷ T0ÖØ×°ÔØ 
+  72   1          
+  73   1        SCON  = 0x40;        //SCON=0100 0000B£¬´®¿ÚÒÔ·½Ê½1¹¤×÷, 8Î»²¨ÌØÂÊ¿É±ä, 1ÆðÊ¼Î»8Êý¾ÝÎ»1Í£Ö¹Î»
+  74   1        
+  75   1        #if USE_UART ==1       //Ê¹ÓÃ´®¿Ú
+  76   1        #if BAUDRATE == 9600UL
+  77   1          PCON  = 0x00;      //PCON=0000 0000B£¬²¨ÌØÂÊ²»±¶Ôö,    ²¨ÌØÂÊ9600,    ¾§Õñ11.0592       
+  78   1          TH1   = 0xFd;      //²¨ÌØÂÊ£º9600 bps
+  79   1          TL1   = 0xFd;
+  80   1        #endif
+  81   1        
+  82   1        #if BAUDRATE == 57600UL
+                  PCON  = 0x80; 
+                    TH1   = 0xFF;
+                  TL1   = 0xFF;
+                #endif             //ÀàËÆµÄ¿ÉÒÔ×Ô¶¨ÒåÉèÖÃ³£ÓÃ²¨ÌØÂÊ£¬ÆäÖÐ£¬UL²»ÄÜÊ¡ÂÔ,´ú±í³¤ÕûÐÍ
+  87   1        #endif /* @ #if USE_UART ==1 */
+  88   1      
+  89   1        EA    = 1;           //¿ª×ÜÖÐ¶Ï(±ØÐë¿ªÆô)
+  90   1        ET0   = 1;           //¿ªÆôT0¶¨Ê±ÖÐ¶Ï(±ØÐë¿ªÆô)
+  91   1        ET1   = 0;           //½ûÖ¹T1¶¨Ê±ÖÐ¶Ï(±ØÐë½ûÖ¹£¬ÒòÎªT1ÒÔÓÃÓÚ²úÉú²¨ÌØÂÊ)
+  92   1      
+  93   1        #if (USE_UART_RI==1 || USE_UART_TI==1)   
+  94   1        ES    = 1;           //¿ªÆô´®¿ÚÖÐ¶Ï
+  95   1        #else
+                  ES    = 0;       //½ûÖ¹´®¿ÚÖÐ¶Ï
+                #endif
+  98   1      
+  99   1        #if USE_UART ==1     //Ê¹ÓÃ´®¿Ú
+ 100   1          TR1   = 1;           //T1¿ªÊ¼´®¿Ú¶¨Ê±²úÉú²¨ÌØÂÊ
+ 101   1        #else
+                  TR1   = 0;           //½ûÖ¹T1´®¿Ú¶¨Ê±²úÉú²¨ÌØÂÊ
+                #endif
+ 104   1      
+ 105   1          TR0   = 0;           //µ±Ç°½ûÖ¹T0¶¨Ê±(ÏµÍ³Æô¶¯¶àÈÎÎñÊ±ÔÙ¿ªÆô)   
+ 106   1      }
+ 107                                                                           
+ 108          //========================================================================================================
+             -======================
+ 109          void SCH_Update(void)  interrupt  INTERRUPT_TIM_0_OF    //T0_TICK_TIME_MS(ms)¶¨Ê±µ½
+C51 COMPILER V9.54   T0_UART_INIT                                                          03/07/2017 17:45:06 PAGE 3   
+
+ 110          {
+ 111   1          INT8U Index;
+ 112   1      
+ 113   1          SCH_Timer0_Reload();    //¶¨Ê±Æ÷ T0ÖØ×°ÔØ 
+ 114   1      
+ 115   1          MS_Counter  += T0_TICK_TIME_MS ;      //Ã¿T0_TICK_TIME_MSms×ÔÔöT0_TICK_TIME_MSms
+ 116   1      
+ 117   1          for(Index = 0; Index < SCH_MAX_TASKS; Index++)  
+ 118   1          {
+ 119   2             if(SCH_tasks[Index].pTask)   //×¢Òâ£¬pTaskÓÐ¿ÉÄÜÎª¿Õ£¬ÒòÎªSCH_MAX_TASKS¿ÉÒÔ´óÓÚÊµ¼ÊÌí¼ÓµÄÈÎÎñÊý
+ 120   2             {
+ 121   3                if(SCH_tasks[Index].Delay_MS <= 0)          
+ 122   3                { 
+ 123   4                  if(SCH_tasks[Index].Preemptive_En == 1) //ÎªÇÀÕ¼Ê½ÈÎÎñ£¬ÔòÁ¢¼´ÔËÐÐ
+ 124   4                  {
+ 125   5                    (*SCH_tasks[Index].pTask)();
+ 126   5                    SCH_tasks[Index].RunMe -= 1;  //RunMe±êÖ¾¸´Î»/¼õ1
+ 127   5      
+ 128   5                    if(SCH_tasks[Index].Period_TICKS == 0)  //Èç¹ûÕâ¸öÇÀÕ¼Ê½ÈÎÎñÊÇ¸ö¡°µ¥´Î¡±ÈÎÎñ£¬½«Ëü´Ó¶ÓÁÐÖÐÉ¾³ý£¬·ñÔ
+             -ò¼ÌÐøÔËÐÐ
+ 129   5                    {                    
+ 130   6                      SCH_tasks[Index].pTask = NULL;  //SCH_Delete_Task(Index);    
+ 131   6                    }                                                              
+ 132   5                  }
+ 133   4                  else  //ÎªºÏ×÷Ê½ÈÎÎñ
+ 134   4                  {
+ 135   5                    SCH_tasks[Index].RunMe += 1;
+ 136   5                  }
+ 137   4                          
+ 138   4                  if(SCH_tasks[Index].Period_TICKS)  //Period != 0±íÊ¾¸ÃÈÎÎñÖÜÆÚÐÔÖ´ÐÐ£¬·ñÔò£¬Ö»Ö´ÐÐÒ»´Î
+ 139   4                  {
+ 140   5                    SCH_tasks[Index].Delay_MS = SCH_tasks[Index].Period_TICKS * TICKS_TIME_MS;  //Õâ¾äµÄ½âÊÍ¼ûÏÂÃæËµÃ÷
+ 141   5                  }
+ 142   4               }                     
+ 143   3               else                  
+ 144   3               {                     
+ 145   4                 SCH_tasks[Index].Delay_MS -= T0_TICK_TIME_MS;   //¼õÈ¥¶¨Ê±²½³¤
+ 146   4               }                     
+ 147   3            }                          
+ 148   2          }                      
+ 149   1      } 
+ 150          
+ 151          //========================================================================================================
+             -======================
+ 152          void SendOneByte(unsigned char c)   //Í¨¹ý ´®¿Ú·¢ÉúÊý¾Ý¸øÉÏÎ»»ú
+ 153          {
+ 154   1          SBUF = c;
+ 155   1          while(!TI);
+ 156   1          TI = 0;
+ 157   1      }
+ 158          
+ 159          //========================================================================================================
+             -======================
+ 160          #if (USE_UART_RI==1 || USE_UART_TI==1)    //Èç¹ûÊ¹ÓÃ´®¿Ú½ÓÊÕÖÐ¶Ï»òÕß´®¿Ú·¢ËÍÖÐ¶Ï
+ 161          void SCH_UART_INTERRUPT(void)  interrupt  INTERRUPT_UART_RX_TX    
+ 162          {
+ 163   1        #if (USE_UART_RI==1)  //Ê¹ÓÃ´®¿Ú½ÓÊÕÖÐ¶Ï
+ 164   1          if(RI) 
+ 165   1          {
+ 166   2              RI = 0;
+ 167   2      
+ 168   2              /*ÕâÀï¿ÉÒÔÌí¼Ó×Ô¼ºµÄ´úÂë*/
+C51 COMPILER V9.54   T0_UART_INIT                                                          03/07/2017 17:45:06 PAGE 4   
+
+ 169   2      
+ 170   2          }
+ 171   1        #endif
+ 172   1      
+ 173   1        #if (USE_UART_TI==1) //Ê¹ÓÃ´®¿Ú·¢ËÍÖÐ¶Ï
+ 174   1          if(TI) 
+ 175   1          {
+ 176   2              TI = 0;
+ 177   2      
+ 178   2              /*ÕâÀï¿ÉÒÔÌí¼Ó×Ô¼ºµÄ´úÂë*/
+ 179   2          }
+ 180   1        #endif
+ 181   1      }
+ 182          #endif
+ 183          
+ 184          
+ 185          /*** ¡ï¡ï¡ï ËµÃ÷ ¡ï¡ï¡ï **********************************************************************************
+             -*******/
+ 186          /*                                                                            */
+ 187          /*       Period_TICKSÖ®ËùÒÔÊÇÒÔÊ±±ê¼ä¸ôÎªµ¥Î»¶ø²»²ÉÓÃÏñDelay_MSÒÔT0_TICK_TIME_MS(ms)Îªµ¥Î»£¬ÊÇÒòÎªµ±¶¨Ê±Æ÷
+             -T0    */
+ 188          /*   ¶¨Ê±»ù×¼Ä¬ÈÏÎª1msÊ±£¬Ê±±ê¼ä¸ô¿ÉÒÔÈ¡ÖµºÜ´ó(65535)£¬ÕâÑù°²ÅÅ£¬²»Ó°Ïì¶¨Ê±Æ÷T0µÄÉèÖÃ¡£ÒòÎª¶¨Ê±Æ÷¶¨Ê±ÓÐ×î´
+             -óÖµ   */
+ 189          /*   (50ms)ÏÞÖÆ¡£                                                                                       */
+ 190          /*                                                                                                        
+             -      */
+ 191          /*********************************************************************************************************
+             -*******/
+ 192          
+ 193          
+ 194          /*------------------------------------------------------------------*-
+ 195          -*--------------------     END OF FILE     ---------------------------
+ 196          -*------------------------------------------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    377    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

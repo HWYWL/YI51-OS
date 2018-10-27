@@ -1,0 +1,83 @@
+C51 COMPILER V9.54   MAIN                                                                  03/07/2017 17:45:06 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN ..\debug\Main.obj
+COMPILER INVOKED BY: I:\Keil_v5\C51\BIN\C51.EXE Main.c OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(..\SCH51;..\task) DEBUG TABS
+                    -(2) OBJECT(..\debug\Main.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------*-
+   2          文件：  main.c
+   3          时间：2016年3月30日
+   4          作者：HWY
+   5          版本：V1.0
+   6          
+   7          说明：OS根据  “司海瑞_NUAA”的V1.45版本修改而来
+   8          MCU选型:ROM最好大于4K，如STC89C52其ROM为8K
+   9          -*-----------------------------------------------*/
+  10          
+  11          #include "includes.h"   
+  12          
+  13          void main(void)
+  14          {
+  15   1        SCH_Init_T0_UART();             //同时初始化定时器和UART
+  16   1      
+  17   1      
+  18   1        /*================================================================
+  19   1                      请在以下用户任务添加区添加相关任务函数  
+  20   1        
+  21   1        添加任务格式为：
+  22   1        SCH_Add_Task(Func_name, DELAY_ms, PERIOD_ticks, PREEMPTIVE_EN)
+  23   1        Func_name：任务函数名
+  24   1        DELAY_ms：从T0启动定时开始,到第一次执行该任务所需要等待的时间(单位ms)
+  25   1        PERIOD_ticks：时标间隔，表示该任务每隔多少个时标执行一次
+  26   1        (一个时标间隔TICKS_TIME_MS为多少个ms，由用户在config.h中自定义,#define T0_TICK_TIME_MS  1)
+  27   1        REEMPTIVE_EN：抢占式任务优先级
+  28   1        ======================================================================
+  29   1        */
+  30   1      
+  31   1        SCH_Add_Task (Task_LED_250ms,      0,     10,  0);  // cooperative,合作式任务 
+  32   1        SCH_Add_Task (Task_Pulse_500ms,     0,     20, 0);  // cooperative,合作式任务   
+  33   1      //  CH_Add_Task (Task_Pulse_Button,    0,    10,  1);  // reemptive,抢占式任务  
+  34   1      
+  35   1      
+  36   1         
+  37   1        /*启动开始任务调度*/
+  38   1        SCH_Start_Tasks();  //一旦启动多任务调度将永不返回
+  39   1      
+  40   1      }
+  41          
+  42          
+  43          /*------------------------------------------------------------------------------------------------
+  44          
+  45          建议代码阅读顺序：config.h  SCH51.h  SCH51.C  main.c  T0_init.h  T0_init.c  TASK.h  task.c 
+  46          
+  47          系统默认启动串口1，默认为5个任务(可自己添加删除)，前四个为合作式任务，最后一个为抢占式任务，
+  48          TICKS_TIME_MS为任务调度的单位时间，默认为50ms，在config.h中更改。
+  49          
+  50          -------------------------------------------------------------------------------------------------*/
+  51          
+  52          
+  53          
+
+C51 COMPILER V9.54   MAIN                                                                  03/07/2017 17:45:06 PAGE 2   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     52    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,13 @@
+C51 COMPILER V9.00   T0_INIT                                                               11/08/2013 23:19:43 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE T0_INIT
+OBJECT MODULE PLACED IN ..\debug\T0_init.obj
+COMPILER INVOKED BY: D:\Program Files\Keil\Keil C51\Keil C51 uV4\C51\BIN\C51.EXE ..\SCH51\T0_init.c LARGE BROWSE INCDIR(
+                    -..\SCH51;..\task) DEBUG OBJECTEXTEND PRINT(.\T0_init.lst) OBJECT(..\debug\T0_init.obj)
+
+line level    source
+
+*** ERROR C318 OF ..\SCH51\T0_init.c: can't open file '..\SCH51\T0_init.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

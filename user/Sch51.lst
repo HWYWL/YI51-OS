@@ -1,0 +1,143 @@
+C51 COMPILER V9.54   SCH51                                                                 03/07/2017 17:45:06 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE SCH51
+OBJECT MODULE PLACED IN ..\debug\Sch51.obj
+COMPILER INVOKED BY: I:\Keil_v5\C51\BIN\C51.EXE ..\SCH51\Sch51.c OMF2 OPTIMIZE(8,SPEED) BROWSE INCDIR(..\SCH51;..\task) 
+                    -DEBUG PRINT(.\Sch51.lst) TABS(2) OBJECT(..\debug\Sch51.obj)
+
+line level    source
+
+   1          /*--------------------------------------*-
+   2          ÎÄ¼þ£ºSch51.h
+   3          Ê±¼ä£º2016Äê3ÔÂ30ÈÕ
+   4          ×÷Õß£ºHWY
+   5          °æ±¾£ºV1.0
+   6          -*---------------------------------------*/
+   7          
+   8          #include "includes.h"
+   9          
+  10          sTask SCH_tasks[SCH_MAX_TASKS];
+  11          INT8U Error_code = 0;          //´íÎó´úÂëÈ«¾Ö±äÁ¿£¬¿ÉÓÃÓÚÏµÍ³À©Õ¹
+  12          
+  13          //========================================================================================================
+             -===============
+  14          void SCH_Clear_Task(const INT8U Index)  //Çå¿ÕµÚIndex¸öÈÎÎñ¿é
+  15          {
+  16   1         SCH_tasks[Index].pTask          = NULL;
+  17   1         SCH_tasks[Index].Delay_MS       = 0;
+  18   1         SCH_tasks[Index].Period_TICKS   = 0;
+  19   1         SCH_tasks[Index].Preemptive_En  = 0;
+  20   1         SCH_tasks[Index].RunMe          = 0;
+  21   1      }
+  22          //========================================================================================================
+             -===============
+  23          INT8U SCH_Add_Task(void (code * pFunction)(void), const INT32U DELAY, const INT16U PERIOD, const INT8U PRE
+             -EMPTIVE_EN)    
+  24          {
+  25   1         INT8U Index = 0;  // Index×î´óÎª255£¬ËùÒÔSCH_MAX_TASKS×î´óÎª256  
+  26   1         
+  27   1         /* Ê×ÏÈÔÚ¶ÓÁÐÖÐÕÒµ½Ò»¸ö¿Õ¿é(Èç¹ûÓÐµÄ»°) */
+  28   1         while((SCH_tasks[Index].pTask != NULL) && (Index < SCH_MAX_TASKS))
+  29   1         {
+  30   2            Index++;
+  31   2         }   
+  32   1         if(Index == SCH_MAX_TASKS)  //µ½´ï¶ÓÎ²
+  33   1         {
+  34   2            Error_code = ERROR_SCH_TOO_MANY_TASKS;  //´íÎóÈÎÎñ
+  35   2            return SCH_MAX_TASKS;
+  36   2         }                         
+  37   1      
+  38   1         //Èç¹ûÔËÐÐµ½Õâ£¬ËµÃ÷ÈÎÎñ¶ÓÁÐÖÐÓÐ¿Õ¼ä
+  39   1         SCH_Clear_Task(Index);        //ÏÈÇå¿Õ£¬ÔÙ¸³Öµ
+  40   1      
+  41   1         SCH_tasks[Index].pTask          = pFunction; 
+  42   1         SCH_tasks[Index].Delay_MS       = DELAY;
+  43   1         SCH_tasks[Index].Period_TICKS   = PERIOD;
+  44   1         SCH_tasks[Index].Preemptive_En  = PREEMPTIVE_EN;
+  45   1         SCH_tasks[Index].RunMe          = 0;
+  46   1      
+  47   1         return Index; 
+  48   1      }
+  49          
+  50          //========================================================================================================
+             -===============
+C51 COMPILER V9.54   SCH51                                                                 03/07/2017 17:45:06 PAGE 2   
+
+  51          INT8U SCH_Delete_Task(const INT8U TASK_ID) //reentrant
+  52          {                           
+  53   1         INT8U Return_code;
+  54   1      
+  55   1         if(SCH_tasks[TASK_ID].pTask == NULL)  //ÕâÀïÃ»ÓÐÈÎÎñ...
+  56   1         {
+  57   2            Error_code  = ERROR_SCH_CANNOT_DELETE_TASK; //ÉèÖÃÈ«¾Ö´íÎó±äÁ¿
+  58   2            Return_code = RETURN_ERROR;
+  59   2         }
+  60   1         else  //ÕâÀïÓÐÈÎÎñ...
+  61   1         {
+  62   2            Return_code = RETURN_NORMAL;      //·µ»ØÕý³£
+  63   2            SCH_tasks[TASK_ID].pTask = NULL;      
+  64   2         }
+  65   1         
+  66   1         return Return_code;  //·µ»ØÈÎÎñ×´Ì¬
+  67   1      }
+  68          
+  69          //========================================================================================================
+             -===============
+  70          static void SCH_Go_To_Sleep()  //ÔÚSCH_Start_Tasks()Ä©Î²´¦½øÈë¿ÕÏÐÄ£Ê½£¬µ±CPUÊÕµ½ÈÎºÎÖÐ¶ÏÊ±·µ»ØÕý³£Ä£Ê½
+  71          {
+  72   1         PCON |= 0x01;        
+  73   1      }
+  74          
+  75          //========================================================================================================
+             -===============
+  76          void SCH_Start_Tasks(void)    //´Ëº¯ÊýÖ»µ÷¶ÈºÏ×÷Ê½ÈÎÎñ£¬ÇÀÕ¼Ê½ÈÎÎñÔÚT0µÄISRÖÐµ÷¶È
+  77          {
+  78   1         INT8U Index; 
+  79   1          
+  80   1         SCH_Start_Ticks();
+  81   1      
+  82   1         while(1)   //Ò»µ©Æô¶¯¶àÈÎÎñµ÷¶È½«ÓÀ²»·µ»Ø
+  83   1         {                                 
+  84   2           for(Index = 0; Index < SCH_MAX_TASKS; Index++)  
+  85   2           {
+  86   3              if((SCH_tasks[Index].Preemptive_En == 0) && (SCH_tasks[Index].RunMe > 0)) //Èç¹ûµ±Ç°ÈÎÎñÊÇºÏ×÷Ê½ÈÎÎ
+             -ñÇÒÒÑ¾ÍÐ÷
+  87   3              {
+  88   4                 (*SCH_tasks[Index].pTask)();   //ÔËÐÐ¸ÃÈÎÎñ
+  89   4                 SCH_tasks[Index].RunMe -= 1;   
+  90   4        
+  91   4                 if(SCH_tasks[Index].Period_TICKS == 0)  //Èç¹ûÕâÊÇ¸ö¡°µ¥´Î¡±ÈÎÎñ£¬½«Ëü´Ó¶ÓÁÐÖÐÉ¾³ý
+  92   4                 {
+  93   5                         SCH_Delete_Task(Index);
+  94   5                 } //·ñÔòÖÜÆÚÐÔµÄÈÎÎñ½«¼ÌÐøÔËÐÐ
+  95   4              }  
+  96   3           }
+  97   2      
+  98   2           SCH_Go_To_Sleep();    //µ÷¶ÈÆ÷½øÈë¿ÕÏÐÄ£Ê½
+  99   2         }        
+ 100   1      }
+ 101          
+ 102          /*------------------------------------------------------------------*-
+ 103          -*--------------------     END OF FILE     ---------------------------
+ 104          -*------------------------------------------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    313    ----
+   CONSTANT SIZE    =   ----    ----
+C51 COMPILER V9.54   SCH51                                                                 03/07/2017 17:45:06 PAGE 3   
+
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     31      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

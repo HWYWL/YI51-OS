@@ -1,0 +1,57 @@
+C51 COMPILER V8.06   DELAY                                                                 03/30/2016 11:51:22 PAGE 1   
+
+
+C51 COMPILER V8.06, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN ..\debug\delay.obj
+COMPILER INVOKED BY: F:\Keil\C51\BIN\C51.EXE ..\delay\delay.c LARGE OMF2 BROWSE INCDIR(..\SCH51;..\task;..\delay) DEBUG 
+                    -PRINT(.\delay.lst) TABS(2) OBJECT(..\debug\delay.obj)
+
+line level    source
+
+   1          /*--------------------------------------*-
+   2          文件：delay.c
+   3          时间：2016年3月30日
+   4          作者：HWY
+   5          版本：V1.0
+   6          -*---------------------------------------*/
+   7          
+   8          #include  "delay.h"
+   9          #include "config.h"
+  10          
+  11          
+  12          
+  13          //========================================================================
+  14          // 函数: void  delay_ms(unsigned char ms)
+  15          // 描述: 延时函数。
+  16          // 参数: ms,要延时的ms数, 这里只支持1~255ms. 自动适应主时钟.
+  17          // 返回: none.
+  18          // 版本: VER1.0
+  19          // 日期: 2013-4-1
+  20          // 备注: 
+  21          //========================================================================
+  22          void  delay_ms(unsigned char ms)
+  23          {
+  24   1           unsigned int i;
+  25   1         do{
+  26   2              i = MAIN_Fosc / 13000;
+  27   2            while(--i)  ;   //14T per loop
+  28   2           }while(--ms);
+  29   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     16    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
